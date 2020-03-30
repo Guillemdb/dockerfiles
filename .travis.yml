@@ -7,8 +7,7 @@ cache: pip
 before_cache:
   - chown -R travis:travis $HOME/.cache/pip
 stages:
-  - build-base
-  - build-dl
+  - build-containers
   - bump-version
   - deploy
 before_install:
@@ -22,21 +21,28 @@ _login: &_login
 matrix:
   fast_finish: true
   include:
-    - stage: build-base
+    - stage: build-containers
       if: commit_message !~ /^Bump version/
       name: "Build base-python 3.6"
       python: 3.6
       script:
         - ./build.sh -p "3.6" -j --tag-version travis-build
       install: *_install
-    - stage: build-base
+    - stage: build-containers
       if: commit_message !~ /^Bump version/
       name: "Build base-python 3.7"
       python: 3.7
       script:
         - ./build.sh -p "3.7" -j --tag-version travis-build
       install: *_install
-    - stage: build-dl
+    - stage: build-containers
+      if: commit_message !~ /^Bump version/
+      name: "Build deep learning python 3.6"
+      python: 3.7
+      script:
+        - ./build.sh -p "3.6" -j -d "all" --tag deep-learning --tag-version travis-build
+      install: *_install
+    - stage: build-containers
       if: commit_message !~ /^Bump version/
       name: "Build deep learning python 3.7"
       python: 3.7
@@ -85,7 +91,19 @@ matrix:
           tags: true
     - stage: deploy
       if: tag =~ .*
-      name: "Push deep-learning-py37 to Docker hub"
+      name: "Push deep-learning-py3.6 to Docker hub"
+      install: *_login
+      script:
+        - ./build.sh -p "3.6" -j --tag-version $TRAVIS_TAG -d "all" -t "deep-learning"
+      deploy:
+        provider: script
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=deep-learning-py3.6
+        skip_cleanup: true
+        on:
+          tags: true
+    - stage: deploy
+      if: tag =~ .*
+      name: "Push deep-learning-py3.7 to Docker hub"
       install: *_login
       script:
         - ./build.sh -p "3.7" -j --tag-version $TRAVIS_TAG -d "all" -t "deep-learning"

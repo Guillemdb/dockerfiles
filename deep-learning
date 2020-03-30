@@ -11,5 +11,5 @@ RUN mkdir /root/.jupyter && \
 CMD jupyter notebook --allow-root --port 8080 --ip 0.0.0.0
 
 RUN if [ "${INSTALL_PYTORCH}" = true ] ; then make install-pytorch; fi
-RUN if [ "${INSTALL_TENSORFLOW}" = true ]  ; then make install-tf; fi
+RUN if [ "${INSTALL_TENSORFLOW}" = true ]  ; then make install-tf PYTHON_VERSION=${PYTHON_VERSION}; fi
 RUN if [ "${REMOVE_DEV}" = true ] ; then make remove-dev-packages; fi

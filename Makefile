@@ -67,11 +67,16 @@ remove-dev-packages:
 
 .PHONY: install-tf
 install-tf:
-	pip install https://github.com/inoryy/tensorflow-optimized-wheels/releases/download/v2.1.0/tensorflow-2.1.0-cp37-cp37m-linux_x86_64.whl
+	@if [ "$PYTHON_VERSION" = "3.6" ];\
+	then \
+		pip3 install tensorflow-gpu; \
+	else \
+		pip3 install https://github.com/inoryy/tensorflow-optimized-wheels/releases/download/v2.1.0/tensorflow-2.1.0-cp37-cp37m-linux_x86_64.whl; \
+	fi
 
 .PHONY: install-pytorch
-.install-pytorch:
-	pip install torch torchvision
+install-pytorch:
+	pip3 install torch torchvision
 
 .PHONY: docker-push
 docker-push:
