@@ -4,15 +4,20 @@ PROJECT = dockerfiles
 VERSION ?= latest
 DOCKER_TAG= None
 PYTHON_VERSION="3.7"
+NVIDIA_DRIVER_VERSION=440.44
+CUDA_VERSION=10.1
+CUDA_VERSION_FULL=10.1.243
+CUDA_VERSION_DASH=10-1
+UBUNTU_NAME=eoan
 
 # Install system packages
 .PHONY: install-common-dependencies
 install-common-dependencies:
 	apt-get update && \
 	apt-get install -y --no-install-suggests --no-install-recommends \
-		ca-certificates locales pkg-config apt-utils gcc g++ wget make cmake git curl flex ssh \
-		libffi-dev libjpeg-turbo-progs libjpeg8-dev libjpeg-turbo8 libjpeg-turbo8-dev \
-		libpng-dev libpng16-16 libglib2.0-0 bison gfortran \
+		ca-certificates locales pkg-config apt-utils gcc g++ wget make cmake git curl flex ssh gpgv \
+		libffi-dev libjpeg-turbo-progs libjpeg8-dev libjpeg-turbo8 libjpeg-turbo8-dev gnupg2 \
+		libpng-dev libpng16-16 libglib2.0-0 bison gfortran lsb-release \
 		libsm6 libxext6 libxrender1 libfontconfig1 libhdf5-dev libopenblas-base libopenblas-dev \
 		libfreetype6 libfreetype6-dev zlib1g-dev zlib1g xvfb python-opengl ffmpeg && \
 	ln -s /usr/lib/x86_64-linux-gnu/libz.so /lib/ && \
@@ -34,25 +39,32 @@ install-python3.7:
 .PHONY: install-python3.6
 install-python3.6:
 	apt-get install -y --no-install-suggests --no-install-recommends \
-		python3.6 python3.6-dev python3-distutils python3-setuptools libhdf5-100\
+		python3.6 python3.6-dev python3-distutils python3-setuptools libhdf5-100 \
 
 # Install phantomjs for holoviews image save
 .PHONY: install-phantomjs
 install-phantomjs:
-	apt-get install curl -y && \
-	curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
-	apt-get install -y nodejs && \
+	curl -sSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
+	echo "deb https://deb.nodesource.com/node_10.x ${UBUNTU_NAME} main" | tee /etc/apt/sources.list.d/nodesource.list && \
+	echo "deb-src https://deb.nodesource.com/node_10.x ${UBUNTU_NAME} main" | tee -a /etc/apt/sources.list.d/nodesource.list && \
+	apt-get update && apt-get install -y nodejs && \
 	npm install phantomjs --unsafe-perm && \
 	npm install -g phantomjs-prebuilt --unsafe-perm
 
-# Install phantomjs for holoviews image save
+# Install python dependencies from requirements.txt and the appropriate ray wheel
 .PHONY: install-python-libs
 install-python-libs:
 	pip3 install -U pip && \
 	pip3 install --no-cache-dir cython && \
 	pip3 install --no-cache-dir -r requirements.txt --no-use-pep517 && \
-	pip3 install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.9.0.dev0-cp37-cp37m-manylinux1_x86_64.whl && \
 	python3 -c "import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot"
+	@if [ ${PYTHON_VERSION} = "3.6" ];\
+	then \
+		pip3 install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.9.0.dev0-cp36-cp36m-manylinux1_x86_64.whl; \
+	else \
+		pip3 install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.9.0.dev0-cp37-cp37m-manylinux1_x86_64.whl; \
+	fi
+
 
 
 .PHONY: remove-dev-packages
@@ -67,11 +79,16 @@ remove-dev-packages:
 
 .PHONY: install-tf
 install-tf:
-	@if [ "$PYTHON_VERSION" = "3.6" ];\
+	@if [ "${PYTHON_VERSION}" = "3.6" ];\
 	then \
 		pip3 install tensorflow-gpu; \
 	else \
-		pip3 install https://github.com/inoryy/tensorflow-optimized-wheels/releases/download/v2.1.0/tensorflow-2.1.0-cp37-cp37m-linux_x86_64.whl; \
+	  	if [ "${CUDA_VERSION}" = "10.2" ];\
+	  	then \
+			pip3 install https://github.com/inoryy/tensorflow-optimized-wheels/releases/download/v2.1.0/tensorflow-2.1.0-cp37-cp37m-linux_x86_64.whl; \
+		else \
+			pip3 install https://github.com/inoryy/tensorflow-optimized-wheels/releases/download/v2.0.0/tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl; \
+		fi \
 	fi
 
 .PHONY: install-pytorch
@@ -81,3 +98,31 @@ install-pytorch:
 .PHONY: docker-push
 docker-push:
 	docker push fragiletech/${DOCKER_TAG}:${VERSION}
+
+
+.PHONY: install-cuda
+install-cuda:
+	apt-get update && \
+	apt-get install -y gnupg && \
+	wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_${CUDA_VERSION_FULL}-1_amd64.deb &&\
+	dpkg -i cuda-repo-ubuntu1804_${CUDA_VERSION_FULL}-1_amd64.deb && \
+	rm cuda-repo-ubuntu1804_${CUDA_VERSION_FULL}-1_amd64.deb && \
+	apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub && \
+	apt-get update && \
+	apt-get -y install --no-install-suggests --no-install-recommends \
+		libcublas10 \
+		cuda-cudart-${CUDA_VERSION_DASH} \
+		cuda-cufft-${CUDA_VERSION_DASH} \
+		cuda-curand-${CUDA_VERSION_DASH} \
+		cuda-cusolver-${CUDA_VERSION_DASH} \
+		cuda-cusparse-${CUDA_VERSION_DASH}
+
+.PHONY: install-nvidia-driver
+install-nvidia-driver:
+	apt-get update && \
+	apt-get install -y kmod && \
+	mkdir -p /opt/nvidia && cd /opt/nvidia/ && \
+	wget http://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run -O /opt/nvidia/driver.run && \
+	chmod +x /opt/nvidia/driver.run && \
+	/opt/nvidia/driver.run -a -s --no-nvidia-modprobe --no-kernel-module --no-unified-memory --no-x-check --no-opengl-files && \
+	rm -rf /opt/nvidia
