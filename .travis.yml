@@ -26,28 +26,42 @@ matrix:
       name: "Build base-python 3.6"
       python: 3.6
       script:
-        - ./build.sh --python "3.6" -js --no-dl --version travis-build
+        - ./build.sh --python "3.6" -js --version travis-build
       install: *_install
     - stage: build-containers
       if: commit_message !~ /^Bump version/
       name: "Build base-python 3.7"
       python: 3.7
       script:
-        - ./build.sh --python "3.7" -js  --no-dl --version travis-build
+        - ./build.sh --python "3.7" -js --version travis-build
       install: *_install
     - stage: build-containers
       if: commit_message !~ /^Bump version/
-      name: "Build data-sciece CUDA 10.2"
-      python: 3.7
+      name: "Build base-python 3.8"
+      python: 3.8
       script:
-        - ./build.sh --python "3.7" -js --version travis-build -tf --pytorch -cu 10.2
+        - ./build.sh --python "3.8" -js --version travis-build
       install: *_install
     - stage: build-containers
       if: commit_message !~ /^Bump version/
-      name: "Build data-sciece CUDA 10.1"
+      name: "Build python 3.6 CUDA 11.0"
+      python: 3.6
+      script:
+        - ./build.sh --python "3.6" -js --cuda --version travis-build
+      install: *_install
+    - stage: build-containers
+      if: commit_message !~ /^Bump version/
+      name: "Build python 3.7 CUDA 11.0"
       python: 3.7
       script:
-        - ./build.sh --python "3.7" -js --version travis-build -tf --pytorch --cuda 10.1
+        - ./build.sh --python "3.7" -js --cuda --version travis-build
+      install: *_install
+    - stage: build-containers
+      if: commit_message !~ /^Bump version/
+      name: "Build python 3.8 CUDA 11.0"
+      python: 3.8
+      script:
+        - ./build.sh --python "3.8" -js --cuda --version travis-build
       install: *_install
     - stage: bump-version
       if: branch == master AND type != pull_request AND commit_message !~ /^Bump version/
@@ -70,10 +84,10 @@ matrix:
       name: "Push base-py36 to Docker hub"
       install: *_login
       script:
-        - ./build.sh --python "3.6" -js --no-dl --version $TRAVIS_TAG
+        - ./build.sh --python "3.6" -js --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=base-py3.6
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubutu-18.04-base-py36
         skip_cleanup: true
         on:
           tags: true
@@ -82,58 +96,58 @@ matrix:
       name: "Push base-py37 to Docker hub"
       install: *_login
       script:
-        - ./build.sh --python "3.7" -js --no-dl --version $TRAVIS_TAG
+        - ./build.sh --python "3.7" -js --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=base-py3.7
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubutu-18.04-base-py37
         skip_cleanup: true
         on:
           tags: true
     - stage: deploy
       if: tag =~ .*
-      name: "Push basic CUDA 10.1 to Docker hub"
+      name: "Push base-py38 to Docker hub"
       install: *_login
       script:
-        - ./build.sh --python "3.7" -js --version $TRAVIS_TAG -tf --pytorch --cuda 10.1 --only-cuda
+        - ./build.sh --python "3.8" -js --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=cuda-10.1
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubutu-20.04-base-py38
         skip_cleanup: true
         on:
           tags: true
     - stage: deploy
       if: tag =~ .*
-      name: "Push basic CUDA 10.2 to Docker hub"
+      name: "Push CUDA 11.0 python 3.6 to Docker hub"
       install: *_login
       script:
-        - ./build.sh --python "3.7" -js --version $TRAVIS_TAG -tf --pytorch --cuda 10.2 --only-cuda
+        - ./build.sh --python "3.6" -js --cuda --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=cuda-10.2
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubutu-18.04-cuda-11.0-py36
         skip_cleanup: true
         on:
           tags: true
     - stage: deploy
       if: tag =~ .*
-      name: "Push deep learning CUDA 10.1 to Docker hub"
+      name: "Push CUDA 11.0 python 3.7 to Docker hub"
       install: *_login
       script:
-        - ./build.sh --python "3.7" -js --version $TRAVIS_TAG -tf --pytorch --cuda 10.1 --container-name deep-learning
+        - ./build.sh --python "3.7" -js --cuda --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=deep-learning-py3.7-cuda10.1
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubutu-18.04-cuda-11.0-py37
         skip_cleanup: true
         on:
           tags: true
     - stage: deploy
       if: tag =~ .*
-      name: "Push deep learning CUDA 10.2 to Docker hub"
+      name: "Push CUDA 11.0 python 3.8 to Docker hub"
       install: *_login
       script:
-        - ./build.sh  --python "3.7" -js --version $TRAVIS_TAG -tf --pytorch --cuda 10.2 --container-name deep-learning
+        - ./build.sh --python "3.8" -js --cuda --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=deep-learning-py3.7-cuda10.2
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubutu-20.04-cuda-11.0-py38
         skip_cleanup: true
         on:
           tags: true
