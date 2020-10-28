@@ -87,7 +87,7 @@ matrix:
         - ./build.sh --python "3.6" -js --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu-18.04-base-py36
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu18.04-base-py36
         skip_cleanup: true
         on:
           tags: true
@@ -99,7 +99,7 @@ matrix:
         - ./build.sh --python "3.7" -js --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu-18.04-base-py37
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu18.04-base-py37
         skip_cleanup: true
         on:
           tags: true
@@ -111,7 +111,7 @@ matrix:
         - ./build.sh --python "3.8" -js --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu-20.04-base-py38
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu20.04-base-py38
         skip_cleanup: true
         on:
           tags: true
@@ -123,7 +123,7 @@ matrix:
         - ./build.sh --python "3.6" -js --cuda --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu-18.04-cuda-11.0-py36
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu18.04-cuda-11.0-py36
         skip_cleanup: true
         on:
           tags: true
@@ -135,7 +135,7 @@ matrix:
         - ./build.sh --python "3.7" -js --cuda --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu-18.04-cuda-11.0-py37
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu18.04-cuda-11.0-py37
         skip_cleanup: true
         on:
           tags: true
@@ -147,7 +147,7 @@ matrix:
         - ./build.sh --python "3.8" -js --cuda --version $TRAVIS_TAG
       deploy:
         provider: script
-        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu-20.04-cuda-11.0-py38
+        script: make docker-push VERSION=$TRAVIS_TAG DOCKER_TAG=ubuntu20.04-cuda-11.0-py38
         skip_cleanup: true
         on:
           tags: true
