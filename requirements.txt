@@ -32,4 +32,3 @@ selenium==3.141.0
 setproctitle==1.1.10
 streamz==0.5.2
 PyYAML==5.3.1
-xxhash==1.4.3
