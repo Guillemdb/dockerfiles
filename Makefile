@@ -77,5 +77,6 @@ remove-dev-packages:
 .PHONY: docker-push
 docker-push:
 	docker push fragiletech/${DOCKER_TAG}:${VERSION}
+	docker push fragiletech/${DOCKER_TAG}:latest
 
 

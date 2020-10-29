@@ -8,10 +8,7 @@ ENV BROWSER=/browser \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8
 
-#ENV UBUNTU_NAME="$(lsb_release -s -c)"
-COPY requirements.txt requirements.txt
 COPY Makefile Makefile
-#RUN apt-get update && apt-get install -y lsb-release && UBUNTU_NAME="$(lsb_release -s -c)" && echo "UBUNTU NAME" ${UBUNTU_NAME}
 # Install system packages
 RUN apt-get update && \
 	apt-get install -y --no-install-suggests --no-install-recommends make cmake && \
