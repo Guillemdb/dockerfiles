@@ -1,0 +1,26 @@
+name: Build containers
+
+on:
+  push:
+  pull_request:
+    branches: [master]
+
+jobs:
+
+  Build-container:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8']
+        container-type: ['base', 'cuda']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build python ${{ matrix.python-version }} ${{ matrix.container-type }}
+        if: ${{ matrix.container-type=='base' }}
+        run: |
+          ./build.sh --python ${{ matrix.python-version }} -js --version travis-build
+
+      - name: Build python ${{ matrix.python-version }} ${{ matrix.container-type }}
+        if: ${{ matrix.container-type=='cuda' }}
+        run: |
+          ./build.sh --python ${{ matrix.python-version }} -js --cuda --version travis-build
