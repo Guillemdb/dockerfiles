@@ -25,6 +25,11 @@ install-common-dependencies:
 	echo '#!/bin/bash\n\\n\echo\n\echo "  $@"\n\echo\n\' > /browser && \
 	chmod +x /browser
 
+# Install Python 3.9
+.PHONY: install-python3.9
+install-python3.9:
+	apt-get install -y --no-install-suggests --no-install-recommends \
+		python3.9 python3.9-dev python3-distutils python3-setuptools
 
 # Install Python 3.8
 .PHONY: install-python3.8
