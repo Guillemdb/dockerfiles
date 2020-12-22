@@ -3,7 +3,7 @@ name: Build containers
 on:
   push:
   pull_request:
-    branches: [master]
+    branches: ["!master"]
 
 jobs:
 
@@ -20,8 +20,10 @@ jobs:
           chmod +x build.sh
 
       - name: Build python ${{ matrix.python-version }} ${{ matrix.container-type }}
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+          CONTAINER_VERSION: gha-build
         run: |
-          ./build.sh --python ${{ matrix.python-version }} -js --${{ matrix.container-type }} --version gha-build
           if [ "${PYTHON_VERSION}" = "3.8" ] || [ "${PYTHON_VERSION}" = "3.9" ]; then\
             UBUNTU_VERSION="20.04"
           else
@@ -34,14 +36,13 @@ jobs:
           fi
           echo "CONTAINER NAME" ${CONTAINER_NAME};
           echo "UBUNTU VERSION" ${UBUNTU_VERSION};
+          ./build.sh --python ${{ matrix.python-version }} -js --${{ matrix.container-type }} --version ${CONTAINER_VERSION}
 
 
   Bump-version:
     if: "!contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/master' && false"
     needs:
       - Build
-      - Pytest
-      - Test-docker
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -59,6 +60,7 @@ jobs:
         git config --global pull.rebase false
         pip install bump2version
     - name: Run bump version
+      run: |
         set -e
         git pull --no-edit origin master
         version_file=version.txt
