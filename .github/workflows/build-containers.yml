@@ -3,7 +3,8 @@ name: Build containers
 on:
   push:
   pull_request:
-    branches: ["!master"]
+    branches: ["master"]
+    types: [ opened, reopened ]
 
 jobs:
 
@@ -40,7 +41,7 @@ jobs:
 
 
   Bump-version:
-    if: "!contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/master' && false"
+    if: "!contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/master'"
     needs:
       - Build
     runs-on: ubuntu-latest
@@ -60,19 +61,22 @@ jobs:
         git config --global pull.rebase false
         pip install bump2version
     - name: Run bump version
+      env:
+        DOCKERFILES_TOKEN: ${{secrets.BOT_REPO_PUSH}}
       run: |
         set -e
         git pull --no-edit origin master
         version_file=version.txt
         current_version=$(grep __version__ $version_file | cut -d\" -f2)
         bumpversion --tag --current-version $current_version --commit patch $version_file
-        git remote add fragile-bot-remote https://fragile-bot:${DOCKERFILES_GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
+        git remote add fragile-bot-remote https://fragile-bot:${DOCKERFILES_TOKEN}@github.com/$GITHUB_REPOSITORY
         git push --tags fragile-bot-remote HEAD:master
         set +e
 
   Deploy:
-    if: "contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/master' && false"
+    if: "contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/master'"
     runs-on: ubuntu-latest
+    needs: Build
     strategy:
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9']
@@ -83,20 +87,34 @@ jobs:
         run: |
           chmod +x build.sh
       - name: Build python ${{ matrix.python-version }} ${{ matrix.container-type }}
-        if: ${{ matrix.container-type=='base' }}
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+          VERSION_FILE: version.txt
         run: |
-          ./build.sh --python ${{ matrix.python-version }} -js --version gha-build
-
-      - name: Build python ${{ matrix.python-version }} ${{ matrix.container-type }}
-        if: ${{ matrix.container-type=='cuda' }}
-        run: |
-          ./build.sh --python ${{ matrix.python-version }} -js --cuda --version gha-build
+          CONTAINER_VERSION=$(grep __version__ $VERSION_FILE | cut -d\" -f2)
+          ./build.sh --python ${{ matrix.python-version }} -js --${{ matrix.container-type }} --version ${CONTAINER_VERSION}
       - name: Login to DockerHub
+        env:
+          DOCKER_USERNAME: ${{secrets.DOCKERHUB_LOGIN}}
+          DOCKER_PASSWORD: ${{secrets.DOCKERHUB_PASS}}
         run: |
           docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" docker.io
       - name: Push images
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+          VERSION_FILE: version.txt
         run: |
-          version_file=version.txt
-          current_version=$(grep __version__ $version_file | cut -d\" -f2)
-          container_name = fragiletech/ubuntu"${UBUNTU_VERSION}"-${{ matrix.container-type }}-py"${${{ matrix.python-version }}//.}":${current_version}
-          make docker-push VERSION=$current_version DOCKER_TAG=ubuntu18.04-base-py36
+          CONTAINER_VERSION=$(grep __version__ $VERSION_FILE | cut -d\" -f2)
+          if [ "${PYTHON_VERSION}" = "3.8" ] || [ "${PYTHON_VERSION}" = "3.9" ]; then\
+            UBUNTU_VERSION="20.04"
+          else
+            UBUNTU_VERSION="18.04"
+          fi
+          if [ "${{ matrix.container-type }}" = "cuda" ]; then \
+            CONTAINER_NAME=fragiletech/ubuntu"${UBUNTU_VERSION}"-cuda-11.0-py"${PYTHON_VERSION//.}"
+          else
+            CONTAINER_NAME=fragiletech/ubuntu"${UBUNTU_VERSION}"-base-py"${PYTHON_VERSION//.}"
+          fi
+          echo "CONTAINER NAME" ${CONTAINER_NAME};
+          echo "CONTAINER VERSION" ${CONTAINER_VERSION};
+          make docker-push VERSION=${CONTAINER_VERSION} DOCKER_TAG=${CONTAINER_NAME}

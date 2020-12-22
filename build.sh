@@ -33,21 +33,14 @@ if [ "${INSTALL_CUDA}" = "true" ]; then \
   CONTAINER_TYPE="cuda";
 fi
 
-if [ "${NO_DEEP_LEARNING}" = "true" ]; then \
-  echo "Building python container with no cuda:";
-  echo "Container type:" ${CONTAINER_TYPE};
-  echo "Container version": "${CONTAINER_VERSION}";
-  echo "Ubuntu version:" ${UBUNTU_VERSION};
-  echo "Python version:" "${PYTHON_VERSION}";
-  echo "Install Phantom js:" ${INSTALL_PHANTOM_JS};
-else
-  echo "Building deep learning container with cuda 11.0:";
-  echo "Container type:" ${CONTAINER_TYPE};
-  echo "Container version": "${CONTAINER_VERSION}";
-  echo "Ubuntu version:" ${UBUNTU_VERSION};
-  echo "Python version:" "${PYTHON_VERSION}";
-  echo "Phantom js:" ${INSTALL_PHANTOM_JS};
-fi
+
+echo "Building docker container:";
+echo "Container type:" ${CONTAINER_TYPE};
+echo "Container version": "${CONTAINER_VERSION}";
+echo "Ubuntu version:" ${UBUNTU_VERSION};
+echo "Python version:" "${PYTHON_VERSION}";
+echo "Install Phantom js:" ${INSTALL_PHANTOM_JS};
+
 
 if [ "${INSTALL_CUDA}" = "true" ]; then \
   export CONTAINER_NAME=fragiletech/ubuntu"${UBUNTU_VERSION}"-cuda-11.0-py"${PYTHON_VERSION//.}":${CONTAINER_VERSION}
